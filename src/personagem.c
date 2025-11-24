@@ -77,8 +77,7 @@ int converteDado(Personagem* p) {
 int novaRolagem(Personagem* p) {
 	int valor_min = 1;
 	int valor_max = converteDado(p);
-	srand(time(0));
-	int rolagem = (rand()%(valor_max-valor_min))+(valor_min);
+	int rolagem = (rand()%(valor_max-valor_min+1))+valor_min;
 	return rolagem;
 }
 
