@@ -1,5 +1,5 @@
-#ifndef SRC_PERSONAGEM_H
-#define SRC_PERSONAGEM_H
+#ifndef SRC_PERSONAGEM_H_
+#define SRC_PERSONAGEM_H_
 
 typedef struct personagem Personagem;
 
