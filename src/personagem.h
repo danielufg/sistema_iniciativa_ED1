@@ -4,7 +4,7 @@
 typedef struct personagem Personagem;
 
 Personagem* criarPersonagem(char nome[50], int nivel, int idDado);
-int apagarPersonagem(Personagem** p);
+void apagarPersonagem(Personagem** p);
 int uparNivel(Personagem* p);
 int novaRolagem(Personagem* p);
 int calcularIniciativa(Personagem* p);
