@@ -3,138 +3,253 @@
 #include "personagem.h"
 
 typedef struct elemento {
-	Personagem* personagem;
-	struct elemento* prox;
-	struct elemento* prev;
+    Personagem* personagem;
+    struct elemento* prox;
+    struct elemento* prev;
 } Elemento;
 
 typedef struct listapersonagens {
-	Elemento* primeiro;
-	Elemento* ultimo;
-	int quant_elementos;
+    Elemento* primeiro;
+    Elemento* ultimo;
+    int quant_elementos;
 } ListaPersonagens;
 
 ListaPersonagens* criarLista() {
-	ListaPersonagens* nova_lista = (ListaPersonagens*) malloc(sizeof(ListaPersonagens));
-	if(nova_lista == NULL) {
-		return NULL;
-	}
-	nova_lista->primeiro = NULL;
-	nova_lista->ultimo = NULL;
-	nova_lista->quant_elementos = 0;
-	return nova_lista;
+    ListaPersonagens* nova = (ListaPersonagens*) malloc(sizeof(ListaPersonagens));
+    if (!nova) return NULL;
+    nova->primeiro = NULL;
+    nova->ultimo = NULL;
+    nova->quant_elementos = 0;
+    return nova;
 }
 
 void destruirLista(ListaPersonagens* l) {
-	if(l == NULL) {
-		return;
-	}
+    if (!l) return;
+    Elemento* atual = l->primeiro;
+    while (atual) {
+        Elemento* aux = atual->prox;
+        free(atual);
+        atual = aux;
+    }
+    free(l);
+}
 
-	Elemento* atual = l->primeiro;
-	while(atual != NULL) {
-		Elemento* aux = atual->prox;
-		free(atual);
-		atual = aux;
-	}
-	free(l);
+void destruirListaMantendoPersonagens(ListaPersonagens* l) {
+    if (!l) return;
+    Elemento* atual = l->primeiro;
+    while (atual) {
+        Elemento* aux = atual->prox;
+        free(atual);
+        atual = aux;
+    }
+    free(l);
+}
+
+void destruirListaComPersonagens(ListaPersonagens* l) {
+    if (!l) return;
+    Elemento* atual = l->primeiro;
+    while (atual) {
+        Elemento* aux = atual->prox;
+        if (atual->personagem) free(atual->personagem);
+        free(atual);
+        atual = aux;
+    }
+    free(l);
+}
+
+void transferirConteudo(ListaPersonagens* origem, ListaPersonagens* destino) {
+    if (!origem || !destino) return;
+    Elemento* atual = origem->primeiro;
+    while (atual) {
+        adicionarPersonagem(atual->personagem, destino);
+        atual = atual->prox;
+    }
 }
 
 Personagem* adicionarPersonagem(Personagem* p, ListaPersonagens* l) {
-	if(p == NULL || l == NULL) {
-		return NULL;
-	}
+    if (!p || !l) return NULL;
+    Elemento* novo = (Elemento*) malloc(sizeof(Elemento));
+    if (!novo) return NULL;
 
-	Elemento* novo_elemento = (Elemento*) malloc(sizeof(Elemento));
+    novo->personagem = p;
+    novo->prox = NULL;
+    novo->prev = NULL;
 
-	if(novo_elemento == NULL) {
-		return NULL;
-	}
+    if (!l->primeiro) {
+        l->primeiro = novo;
+        l->ultimo = novo;
+        l->quant_elementos++;
+        return p;
+    }
 
-	novo_elemento->personagem = p;
-	novo_elemento->prox = NULL;
-	novo_elemento->prev = NULL;
-
-	if(l->primeiro == NULL) {
-		l->primeiro = novo_elemento;
-		l->ultimo = novo_elemento;
-		l->quant_elementos++;
-		return p;
-	}
-	l->ultimo->prox = novo_elemento;
-	novo_elemento->prev = l->ultimo;
-	l->ultimo = novo_elemento;
-	l->quant_elementos++;
-	return p;
+    l->ultimo->prox = novo;
+    novo->prev = l->ultimo;
+    l->ultimo = novo;
+    l->quant_elementos++;
+    return p;
 }
 
 Personagem* removerPersonagem(Personagem* p, ListaPersonagens* l) {
-	if(p == NULL || l == NULL || l->primeiro == NULL) {
-			return NULL;
-	}
+    if (!p || !l || !l->primeiro) return NULL;
 
-	Elemento* atual = l->primeiro;
-	while(atual != NULL && strcmp(p->nome, atual->personagem->nome) != 0) {
-		atual = atual->prox;
-	}
+    Elemento* atual = l->primeiro;
+    while (atual && strcmp(atual->personagem->nome, p->nome) != 0) {
+        atual = atual->prox;
+    }
 
-	// percorreu a lista e nao achou o personagem
-	if(atual == NULL) {
-		return NULL;
-	}
+    if (!atual) return NULL;
 
-	// o personagem a ser removido era o primeiro
-	if(atual->prev == NULL) {
-		l->primeiro = atual->prox;
-	} else {
-		atual->prev->prox = atual->prox;
-	}
+    if (!atual->prev) {
+        l->primeiro = atual->prox;
+        if (l->primeiro) l->primeiro->prev = NULL;
+    } else {
+        atual->prev->prox = atual->prox;
+    }
 
-	// o personagem a ser removido era o ultimo
-	if(atual->prox == NULL) {
-		l->ultimo = atual->prev;
-	} else {
-		atual->prox->prev = atual->prev;
-	}
+    if (!atual->prox) {
+        l->ultimo = atual->prev;
+    } else {
+        atual->prox->prev = atual->prev;
+    }
 
-	free(atual);
-	atual = NULL;
-	l->quant_elementos--;
-
-	return p;
+    free(atual);
+    l->quant_elementos--;
+    return p;
 }
 
-/*
+typedef struct duas_listas {
+    ListaPersonagens* lista1;
+    ListaPersonagens* lista2;
+} DuasListas;
+
+DuasListas divideLista(ListaPersonagens* P) {
+    DuasListas r;
+    r.lista1 = criarLista();
+    r.lista2 = criarLista();
+
+    if (!P || P->quant_elementos == 0) return r;
+
+    int metade = (P->quant_elementos % 2 == 0)
+        ? P->quant_elementos / 2
+        : (P->quant_elementos / 2) + 1;
+
+    Elemento* atual = P->primeiro;
+    Elemento* anterior = NULL;
+
+    for (int i = 0; i < metade; i++) {
+        anterior = atual;
+        atual = atual->prox;
+    }
+
+    r.lista1->primeiro = P->primeiro;
+    r.lista1->ultimo = anterior;
+    r.lista1->quant_elementos = metade;
+
+    if (anterior) anterior->prox = NULL;
+
+    r.lista2->primeiro = atual;
+    r.lista2->quant_elementos = P->quant_elementos - metade;
+
+    if (atual) atual->prev = NULL;
+
+    Elemento* temp = atual;
+    Elemento* ult = NULL;
+    while (temp) {
+        ult = temp;
+        temp = temp->prox;
+    }
+    r.lista2->ultimo = ult;
+
+    return r;
+}
+
+ListaPersonagens* merge(ListaPersonagens* a, ListaPersonagens* b) {
+    ListaPersonagens* r = criarLista();
+    Elemento* pa = a->primeiro;
+    Elemento* pb = b->primeiro;
+
+    while (pa && pb) {
+        if (pa->personagem->iniciativa >= pb->personagem->iniciativa) {
+            adicionarPersonagem(pa->personagem, r);
+            pa = pa->prox;
+        } else {
+            adicionarPersonagem(pb->personagem, r);
+            pb = pb->prox;
+        }
+    }
+
+    while (pa) {
+        adicionarPersonagem(pa->personagem, r);
+        pa = pa->prox;
+    }
+
+    while (pb) {
+        adicionarPersonagem(pb->personagem, r);
+        pb = pb->prox;
+    }
+
+    return r;
+}
+
 ListaPersonagens* ordenarIniciativasMergeSort(ListaPersonagens* p) {
 
-}
-*/
+    if (!p || p->quant_elementos <= 1) return p;
 
-/*
+    DuasListas partes = divideLista(p);
+
+    ListaPersonagens* e = ordenarIniciativasMergeSort(partes.lista1);
+    ListaPersonagens* d = ordenarIniciativasMergeSort(partes.lista2);
+
+    ListaPersonagens* r = merge(e, d);
+
+    destruirListaMantendoPersonagens(e);
+    destruirListaMantendoPersonagens(d);
+
+    return r;
+}
+
 ListaPersonagens* ordenarIniciativasBubbleSort(ListaPersonagens* p) {
 
+    if (!p || p->quant_elementos <= 1) return p;
+
+    int troca;
+
+    do {
+        troca = 0;
+        Elemento* atual = p->primeiro;
+
+        while (atual && atual->prox) {
+
+            if (atual->personagem->iniciativa <
+                atual->prox->personagem->iniciativa) {
+
+                Personagem* temp = atual->personagem;
+                atual->personagem = atual->prox->personagem;
+                atual->prox->personagem = temp;
+
+                troca = 1;
+            }
+
+            atual = atual->prox;
+        }
+
+    } while (troca);
+
+    return p;
 }
-*/
 
 void printOrdemCombate(ListaPersonagens* l) {
-	if(l == NULL) {
-		printf("Lista inválida.");
-		return;
-	}
+    if (!l) return;
+    if (!l->primeiro) return;
 
-	if(l->primeiro == NULL) {
-		printf("Não há personagens em combate.\n");
-		return;
-	}
+    Elemento* atual = l->primeiro;
+    int i = 1;
 
-	Elemento* atual = l->primeiro;
-	int i = 1;
-
-	printf("ORDEM DE COMBATE:\n");
-	while(atual != NULL) {
-		printf("%d) Personagem: %s - Iniciativa: %d;\n", i,
-				atual->personagem->nome, atual->personagem->iniciativa);
-		i++;
-		atual = atual->prox;
-	}
-	printf("-------------------------------------------\n");
+    while (atual) {
+        printf("%d) %s - Iniciativa: %d\n",
+            i, atual->personagem->nome,
+            atual->personagem->iniciativa);
+        i++;
+        atual = atual->prox;
+    }
 }
