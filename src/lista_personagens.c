@@ -1,18 +1,8 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "lista_personagens.h"
 #include "personagem.h"
-
-typedef struct elemento {
-    Personagem* personagem;
-    struct elemento* prox;
-    struct elemento* prev;
-} Elemento;
-
-typedef struct listapersonagens {
-    Elemento* primeiro;
-    Elemento* ultimo;
-    int quant_elementos;
-} ListaPersonagens;
 
 ListaPersonagens* criarLista() {
     ListaPersonagens* nova = (ListaPersonagens*) malloc(sizeof(ListaPersonagens));
@@ -90,31 +80,39 @@ Personagem* adicionarPersonagem(Personagem* p, ListaPersonagens* l) {
 }
 
 Personagem* removerPersonagem(Personagem* p, ListaPersonagens* l) {
-    if (!p || !l || !l->primeiro) return NULL;
+    if(p == NULL || l == NULL || l->primeiro == NULL) {
+            return NULL;
+    }
 
     Elemento* atual = l->primeiro;
-    while (atual && strcmp(atual->personagem->nome, p->nome) != 0) {
+
+    while(atual != NULL && strcmp(p->nome, atual->personagem->nome) != 0) {
         atual = atual->prox;
     }
 
-    if (!atual) return NULL;
+    if(atual == NULL) {
+        return NULL;
+    }
 
-    if (!atual->prev) {
+    Personagem* personagem_real_encontrado = atual->personagem;
+
+    if(atual->prev == NULL) {
         l->primeiro = atual->prox;
-        if (l->primeiro) l->primeiro->prev = NULL;
+        if(l->primeiro) l->primeiro->prev = NULL;
     } else {
         atual->prev->prox = atual->prox;
     }
 
-    if (!atual->prox) {
+    if(atual->prox == NULL) {
         l->ultimo = atual->prev;
+        if(l->ultimo) l->ultimo->prox = NULL;
     } else {
         atual->prox->prev = atual->prev;
     }
-
     free(atual);
     l->quant_elementos--;
-    return p;
+
+    return personagem_real_encontrado;
 }
 
 typedef struct duas_listas {
